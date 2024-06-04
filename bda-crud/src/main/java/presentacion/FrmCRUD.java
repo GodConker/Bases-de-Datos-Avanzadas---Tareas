@@ -8,16 +8,7 @@ import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumnModel;
@@ -51,7 +42,7 @@ public class FrmCRUD extends javax.swing.JFrame {
 
         // Configurar los botones como no visibles al inicio
         btnCancelar.setVisible(false);
-        btnRegistrarEditar.setVisible(false);
+        btnRegistrarConfirmar.setVisible(false);
 
         this.alumnoNegocio = alumnoNegocio;
         this.cargarMetodosIniciales();
@@ -126,65 +117,16 @@ public class FrmCRUD extends javax.swing.JFrame {
         }
     }
 
-    public static boolean esNombreValido(String nombre) {
-        // Expresión regular para validar nombres
-        String regex = "^[A-Za-záéíóúÁÉÍÓÚñÑüÜ\\s]+$"; // Permite letras (mayúsculas y minúsculas), espacios y caracteres acentuados
-
-        Pattern pattern = Pattern.compile(regex);
-        Matcher matcher = pattern.matcher(nombre);
-
-        return matcher.matches();
-    }
-
     private void registrarAlumno() {
+        String nombres = txtNombres.getText().trim();
+        String apellidoPaterno = txtApellidoPaterno.getText().trim();
+        String apellidoMaterno = txtApellidoMaterno.getText().trim();
+
         try {
-            // Establecer la conexión a la base de datos
-            Connection conexion = DriverManager.getConnection("jdbc:mysql://localhost/bdclase280524", "root", "13137Cas");
-
-            // Validar que los campos obligatorios no estén vacíos
-            String nombres = txtNombres.getText().trim();
-            String apellidoPaterno = txtApellidoPaterno.getText().trim();
-
-            if (nombres.isEmpty() || apellidoPaterno.isEmpty()) {
-                // Mostrar un mensaje de error si faltan datos obligatorios
-                JOptionPane.showMessageDialog(this, "Por favor, ingresa la información obligatoria correctamente solicitada en este formulario.", "Error", JOptionPane.ERROR_MESSAGE);
-                return; // Salir del método sin registrar el alumno
-            }
-
-            // Validar que el nombre sea válido (solo letras, espacios y caracteres acentuados)
-            if (!esNombreValido(nombres)) {
-                JOptionPane.showMessageDialog(this, "El nombre ingresado no es válido. Por favor, verifica que solo contenga letras y espacios.", "Error", JOptionPane.ERROR_MESSAGE);
-                return; // Salir del método sin registrar el alumno
-            }
-
-            // Sentencia SQL para insertar un nuevo alumno en la tabla 'alumnos'
-            String sentenciaSql = "INSERT INTO alumnos (nombres, apellidoPaterno, apellidoMaterno, eliminado, activo) VALUES (?, ?, ?, ?, ?);";
-
-            // Preparar la sentencia SQL, permitiendo obtener las claves generadas automáticamente
-            PreparedStatement preparedStatement = conexion.prepareStatement(sentenciaSql, Statement.RETURN_GENERATED_KEYS);
-
-            // Establecer los valores para los parámetros de la sentencia SQL
-            preparedStatement.setString(1, nombres);
-            preparedStatement.setString(2, apellidoPaterno);
-            preparedStatement.setString(3, txtApellidoMaterno.getText()); // Puede estar vacío
-            preparedStatement.setBoolean(4, false); // Siempre falso al registrar un nuevo alumno
-            preparedStatement.setBoolean(5, true); // Siempre activo al registrar un nuevo alumno
-
-            // Ejecutar la sentencia SQL de inserción
-            preparedStatement.executeUpdate();
-
-            // Obtener las claves generadas automáticamente (por ejemplo, el ID del nuevo registro)
-            ResultSet resultado = preparedStatement.getGeneratedKeys();
-            while (resultado.next()) {
-                // Imprimir el ID generado para el nuevo registro
-                System.out.println("Alumno registrado con ID: " + resultado.getInt(1));
-            }
-
-            // Cerrar la conexión
-            conexion.close();
-        } catch (SQLException ex) {
-            // Capturar y manejar cualquier excepción SQL que ocurra
-            System.out.println("Ocurrió un error: " + ex.getMessage());
+            alumnoNegocio.registrarAlumno(nombres, apellidoPaterno, apellidoMaterno);
+            JOptionPane.showMessageDialog(this, "Alumno registrado exitosamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+        } catch (NegocioException ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
         cargarAlumnosEnTabla();
     }
@@ -228,30 +170,14 @@ public class FrmCRUD extends javax.swing.JFrame {
                 "Confirmar eliminación", JOptionPane.YES_NO_OPTION);
 
         if (confirmacion == JOptionPane.YES_OPTION) {
-            // Si el usuario confirma, eliminar el registro
             try {
-                // Establecer la conexión a la base de datos
-                Connection conexion = DriverManager.getConnection("jdbc:mysql://localhost/bdclase280524", "root", "13137Cas");
-
-                // Sentencia SQL para eliminar el alumno
-                String sentenciaSql = "DELETE FROM alumnos WHERE idAlumno = ?";
-                PreparedStatement preparedStatement = conexion.prepareStatement(sentenciaSql);
-                preparedStatement.setInt(1, idAlumno);
-
-                // Ejecutar la sentencia SQL
-                preparedStatement.executeUpdate();
-
-                // Mostrar mensaje de éxito
+                alumnoNegocio.eliminarAlumno(idAlumno);
                 JOptionPane.showMessageDialog(this, "Alumno eliminado exitosamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
-
-                // Cerrar la conexión
-                conexion.close();
 
                 // Recargar la tabla
                 cargarAlumnosEnTabla();
-            } catch (SQLException ex) {
-                // Manejar la excepción
-                System.out.println("Ocurrió un error: " + ex.getMessage());
+            } catch (NegocioException ex) {
+                JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
@@ -319,7 +245,7 @@ public class FrmCRUD extends javax.swing.JFrame {
         lblObligatorioNombres1 = new javax.swing.JLabel();
         lblObligatorioNombres2 = new javax.swing.JLabel();
         btnCancelar = new javax.swing.JButton();
-        btnRegistrarEditar = new javax.swing.JButton();
+        btnRegistrarConfirmar = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Administración de Alumnos");
@@ -400,10 +326,10 @@ public class FrmCRUD extends javax.swing.JFrame {
             }
         });
 
-        btnRegistrarEditar.setText("Registrar");
-        btnRegistrarEditar.addActionListener(new java.awt.event.ActionListener() {
+        btnRegistrarConfirmar.setText("Registrar");
+        btnRegistrarConfirmar.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnRegistrarEditarActionPerformed(evt);
+                btnRegistrarConfirmarActionPerformed(evt);
             }
         });
 
@@ -446,7 +372,7 @@ public class FrmCRUD extends javax.swing.JFrame {
                                             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                                                 .addComponent(btnCancelar)
                                                 .addGap(18, 18, 18)
-                                                .addComponent(btnRegistrarEditar)
+                                                .addComponent(btnRegistrarConfirmar)
                                                 .addGap(49, 49, 49)))
                                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                             .addComponent(btnRegistrar)
@@ -487,7 +413,7 @@ public class FrmCRUD extends javax.swing.JFrame {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(btnRegistrar)
                     .addComponent(btnCancelar)
-                    .addComponent(btnRegistrarEditar))
+                    .addComponent(btnRegistrarConfirmar))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
@@ -507,7 +433,7 @@ public class FrmCRUD extends javax.swing.JFrame {
 
         // Después de registrar el alumno, muestra los botones
         btnCancelar.setVisible(true);
-        btnRegistrarEditar.setVisible(true);
+        btnRegistrarConfirmar.setVisible(true);
     }//GEN-LAST:event_btnRegistrarActionPerformed
 
     private void btnAtrasActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAtrasActionPerformed
@@ -535,10 +461,10 @@ public class FrmCRUD extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_btnSiguienteActionPerformed
 
-    private void btnRegistrarEditarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRegistrarEditarActionPerformed
+    private void btnRegistrarConfirmarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRegistrarConfirmarActionPerformed
         // TODO add your handling code here:
         registrarAlumno();
-    }//GEN-LAST:event_btnRegistrarEditarActionPerformed
+    }//GEN-LAST:event_btnRegistrarConfirmarActionPerformed
 
     private void btnCancelarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCancelarActionPerformed
         // TODO add your handling code here:
@@ -549,7 +475,7 @@ public class FrmCRUD extends javax.swing.JFrame {
 
         // Ocultar los botones btnCancelar y btnRegistrarEditar
         btnCancelar.setVisible(false);
-        btnRegistrarEditar.setVisible(false);
+        btnRegistrarConfirmar.setVisible(false);
     }//GEN-LAST:event_btnCancelarActionPerformed
 
     /**
@@ -602,7 +528,7 @@ public class FrmCRUD extends javax.swing.JFrame {
     private javax.swing.JButton btnAtras;
     private javax.swing.JButton btnCancelar;
     private javax.swing.JButton btnRegistrar;
-    private javax.swing.JButton btnRegistrarEditar;
+    private javax.swing.JButton btnRegistrarConfirmar;
     private javax.swing.JButton btnSiguiente;
     private javax.swing.JCheckBox chbActivo;
     private javax.swing.JScrollPane jScrollPane1;

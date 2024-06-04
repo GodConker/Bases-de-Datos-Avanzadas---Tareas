@@ -18,4 +18,10 @@ public interface IAlumnoNegocio {
 //    public AlumnoLecturaDTO obtenerPorId(int id) throws NegocioException;
 //    
 //    public EditarAlumnoDTO editar(EditarAlumno alumno) throws NegocioException;
+
+    public void registrarAlumno(String nombres, String apellidoPaterno, String apellidoMaterno) throws NegocioException;
+
+    public void editarAlumno(int idAlumno, String nombres, String apellidoPaterno, String apellidoMaterno) throws NegocioException;
+    
+    public void eliminarAlumno(int idAlumno) throws NegocioException;
 }

@@ -14,5 +14,11 @@ public interface IAlumnoDAO {
     public List<AlumnoEntidad> buscarAlumnosTabla() throws PersistenciaException;
     
 //    public AlumnoEntidad buscarPorIdAlumno(int id) throws PersistenciaException;
+
+    public void registrarAlumno(AlumnoEntidad nuevoAlumno) throws PersistenciaException;
+
+    public void editarAlumno(AlumnoEntidad alumno) throws PersistenciaException;
+    
+    public void eliminarAlumno(int idAlumno) throws PersistenciaException;
     
 }

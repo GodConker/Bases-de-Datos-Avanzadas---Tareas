@@ -4,16 +4,13 @@
  */
 package presentacion;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import javax.swing.JOptionPane;
 import negocio.IAlumnoNegocio;
+import negocio.NegocioException;
 
 /**
  *
- * @author danie
+ * @author Daniel Alejandro Castro Félix - 235294.
  */
 public class FrmEditarAlumno extends javax.swing.JFrame {
 
@@ -24,6 +21,11 @@ public class FrmEditarAlumno extends javax.swing.JFrame {
     /**
      * Creates new form FrmEditarAlumno
      *
+     * @param frmCrud
+     * @param idAlumno
+     * @param nombres
+     * @param apellidoPaterno
+     * @param apellidoMaterno
      */
     public FrmEditarAlumno(FrmCRUD frmCrud, int idAlumno, String nombres, String apellidoPaterno, String apellidoMaterno) {
         initComponents(); // Asegúrate de llamar al constructor del JFrame
@@ -139,35 +141,21 @@ public class FrmEditarAlumno extends javax.swing.JFrame {
     }//GEN-LAST:event_btnCancelarActionPerformed
 
     private void btnEditarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEditarActionPerformed
+        String nombres = txtNombres.getText().trim();
+        String apellidoPaterno = txtApellidoPaterno.getText().trim();
+        String apellidoMaterno = txtApellidoMaterno.getText().trim();
+
         try {
-            // Establecer la conexión a la base de datos
-            Connection conexion = DriverManager.getConnection("jdbc:mysql://localhost/bdclase280524", "root", "13137Cas");
-
-            // Sentencia SQL para actualizar los datos del alumno
-            String sentenciaSql = "UPDATE alumnos SET nombres = ?, apellidoPaterno = ?, apellidoMaterno = ? WHERE idAlumno = ?";
-            PreparedStatement preparedStatement = conexion.prepareStatement(sentenciaSql);
-            preparedStatement.setString(1, txtNombres.getText());
-            preparedStatement.setString(2, txtApellidoPaterno.getText());
-            preparedStatement.setString(3, txtApellidoMaterno.getText());
-            preparedStatement.setInt(4, idAlumno);
-
-            // Ejecutar la sentencia SQL
-            preparedStatement.executeUpdate();
-
-            // Mostrar mensaje de éxito
+            alumnoNegocio.editarAlumno(idAlumno, nombres, apellidoPaterno, apellidoMaterno);
             JOptionPane.showMessageDialog(this, "Alumno actualizado exitosamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
-
-            // Cerrar la conexión
-            conexion.close();
 
             // Llamar al método para recargar la tabla en FrmCRUD
             frmCrud.cargarAlumnosEnTabla();
 
             // Cerrar el formulario de edición
             this.dispose();
-        } catch (SQLException ex) {
-            // Manejar la excepción
-            System.out.println("Ocurrió un error: " + ex.getMessage());
+        } catch (NegocioException ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }//GEN-LAST:event_btnEditarActionPerformed
 
